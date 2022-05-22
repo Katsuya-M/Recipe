@@ -1,0 +1,47 @@
+---
+title: "宮嶋さん家のレシピ"
+output:
+  html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readxl)
+library(DT)
+```
+
+```{r readrecipe, include=FALSE}
+order <- read_excel("C:/Users/katsu/OneDrive/ドキュメント/レシピ/Recipe.xlsx", 
+                    sheet = 2)
+order_dai <- order %>% drop_na(`大`) %>% 
+  pull(`大`)
+order_syo <- order %>% drop_na(`小`) %>% 
+  pull(`小`)
+
+recipe <- read_excel("C:/Users/katsu/OneDrive/ドキュメント/レシピ/Recipe.xlsx") %>% 
+  mutate(across(.cols = c("大分類", "小分類"), .fns = as.factor)) %>% 
+  mutate(URL = map_chr(URL, ~ if_else(is.na(.), "", paste0('<a href="', ., '">URL</a>')))) %>% 
+  unite("タグ", 6:ncol(.), sep = ",") %>% 
+  mutate(`タグ` = `タグ` %>% str_remove_all(",NA") %>% str_remove_all("NA")) %>% 
+  mutate(`大分類` = fct_relevel(`大分類`, order_dai), 
+         `小分類` = fct_relevel(`小分類`, order_syo))
+```
+
+```{r showrecipe, echo=FALSE}
+DT::datatable(recipe, filter = "top", options = list(
+  pageLength = 20,
+  autoWidth = TRUE,
+  deferRender = TRUE, 
+  scrollY = 200, 
+  scroller = TRUE,
+  columnDefs = list(
+      list(targets = 6, visible = FALSE)
+    ), 
+  buttons = c("colvis"), 
+  dom = "Bfrtip"
+), 
+extensions = c("Scroller", "Buttons"),
+escape = FALSE)
+```
+
